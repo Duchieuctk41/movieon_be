@@ -10,23 +10,23 @@ import (
 	"net/http"
 )
 
-type MovieHandlers struct {
-	service service.MovieInterface
+type RatingHandlers struct {
+	service service.RatingInterface
 }
 
-func NewMovieHandlers(service service.MovieInterface) *MovieHandlers {
-	return &MovieHandlers{service: service}
+func NewRatingHandlers(service service.RatingInterface) *RatingHandlers {
+	return &RatingHandlers{service: service}
 }
 
 // Create
 // @Tags Create
 // @Accept  json
 // @Produce  json
-// @Param data body model.MovieRequest true "body data"
+// @Param data body model.RatingRequest true "body data"
 // @Success 200 {object} interface{}
-// @Router /api/v1/admin/movie/create [post]
-func (h *MovieHandlers) Create(r *ginext.Request) (*ginext.Response, error) {
-	req := model.MovieRequest{}
+// @Router /api/v1/rating/create [post]
+func (h *RatingHandlers) Create(r *ginext.Request) (*ginext.Response, error) {
+	req := model.RatingRequest{}
 	r.MustBind(&req)
 
 	if err := common.CheckRequireValid(req); err != nil {
@@ -45,16 +45,16 @@ func (h *MovieHandlers) Create(r *ginext.Request) (*ginext.Response, error) {
 // @Accept  json
 // @Produce  json
 // @Param id path string true "id"
-// @Param data body model.MovieRequest true "body data"
+// @Param data body model.RatingRequest true "body data"
 // @Success 200 {object} interface{}
-// @Router /api/v1/admin/movie/update/:id [put]
-func (h *MovieHandlers) Update(r *ginext.Request) (*ginext.Response, error) {
+// @Router /api/v1/rating/update/:id [put]
+func (h *RatingHandlers) Update(r *ginext.Request) (*ginext.Response, error) {
 	id := utils.GetIdFromUri(r.GinCtx)
 	if id == nil {
 		return nil, ginext.NewError(http.StatusForbidden, "Wrong ID")
 	}
 
-	req := model.MovieRequest{}
+	req := model.RatingRequest{}
 	r.MustBind(&req)
 	req.ID = id
 
@@ -75,8 +75,8 @@ func (h *MovieHandlers) Update(r *ginext.Request) (*ginext.Response, error) {
 // @Produce  json
 // @Param id path string true "id"
 // @Success 200 {object} interface{}
-// @Router /api/v1/admin/movie/delete/:id [delete]
-func (h *MovieHandlers) Delete(r *ginext.Request) (*ginext.Response, error) {
+// @Router /api/v1/rating/delete/:id [delete]
+func (h *RatingHandlers) Delete(r *ginext.Request) (*ginext.Response, error) {
 	id := utils.ParseIDFromUri(r.GinCtx)
 	if id == nil {
 		return nil, ginext.NewError(http.StatusForbidden, "Wrong ID")
@@ -94,8 +94,8 @@ func (h *MovieHandlers) Delete(r *ginext.Request) (*ginext.Response, error) {
 // @Produce  json
 // @Param id path string true "id"
 // @Success 200 {object} interface{}
-// @Router /api/v1/movie/get-one/:id [get]
-func (h *MovieHandlers) GetOne(r *ginext.Request) (*ginext.Response, error) {
+// @Router /api/v1/rating/get-one/:id [get]
+func (h *RatingHandlers) GetOne(r *ginext.Request) (*ginext.Response, error) {
 
 	id := utils.ParseIDFromUri(r.GinCtx)
 	if id == nil {
@@ -115,11 +115,11 @@ func (h *MovieHandlers) GetOne(r *ginext.Request) (*ginext.Response, error) {
 // @Produce  json
 // @Param data body model.BlacklistParam true "body data"
 // @Success 200 {object} interface{}
-// @Router /api/v1/movie/get-list [get]
-func (h *MovieHandlers) GetList(r *ginext.Request) (*ginext.Response, error) {
+// @Router /api/v1/rating/get-list [get]
+func (h *RatingHandlers) GetList(r *ginext.Request) (*ginext.Response, error) {
 	log := logger.WithCtx(r.GinCtx, utils.GetCurrentCaller(h, 0))
 
-	req := model.MovieParams{}
+	req := model.RatingParams{}
 	if err := r.GinCtx.BindQuery(&req); err != nil {
 		log.WithError(err).Error("error_400: error parse")
 		return nil, ginext.NewError(http.StatusBadRequest, "Yêu cầu không hợp lệ")
@@ -135,80 +135,26 @@ func (h *MovieHandlers) GetList(r *ginext.Request) (*ginext.Response, error) {
 	}}, nil
 }
 
-// GetListContinue
-// @Tags GetListContinue
+// CreateOrUpdate
+// @Tags CreateOrUpdate
 // @Accept  json
 // @Produce  json
-// @Param data body model.BlacklistParam true "body data"
+// @Param data body model.RatingRequest true "body data"
 // @Success 200 {object} interface{}
-// @Router /api/v1/movie/get-list-con [get]
-func (h *MovieHandlers) GetListContinue(r *ginext.Request) (*ginext.Response, error) {
-	log := logger.WithCtx(r.GinCtx, utils.GetCurrentCaller(h, 0))
-
-	req := model.MovieParams{}
-	if err := r.GinCtx.BindQuery(&req); err != nil {
-		log.WithError(err).Error("error_400: error parse")
-		return nil, ginext.NewError(http.StatusBadRequest, "Yêu cầu không hợp lệ")
-	}
-
-	data, err := h.service.GetListContinue(r.Context(), req)
-	if err != nil {
-		return nil, err
-	}
-	return &ginext.Response{Code: http.StatusOK, GeneralBody: &ginext.GeneralBody{
-		Data: data.Data,
-		Meta: data.Meta,
-	}}, nil
-}
-
-// GetListSuggest
-// @Tags GetListSuggest
-// @Accept  json
-// @Produce  json
-// @Param data body model.BlacklistParam true "body data"
-// @Success 200 {object} interface{}
-// @Router /api/v1/movie/get-list-suggest/:id [get]
-func (h *MovieHandlers) GetListSuggest(r *ginext.Request) (*ginext.Response, error) {
-
-	id := utils.GetIdFromUri(r.GinCtx)
-	if id == nil {
-		return nil, ginext.NewError(http.StatusForbidden, "Wrong ID")
-	}
-
-	data, err := h.service.GetListSuggest(r.Context(), *id)
-	if err != nil {
-		return nil, err
-	}
-	return &ginext.Response{Code: http.StatusOK, GeneralBody: &ginext.GeneralBody{
-		Data: data.Data,
-	}}, nil
-}
-
-// UpdateViewCount
-// @Tags UpdateViewCount
-// @Accept  json
-// @Produce  json
-// @Param data body model.BlacklistParam true "body data"
-// @Success 200 {object} interface{}
-// @Router /api/v1/movie/update-view [post]
-func (h *MovieHandlers) UpdateViewCount(r *ginext.Request) (*ginext.Response, error) {
-	log := logger.WithCtx(r.GinCtx, utils.GetCurrentCaller(h, 0))
-
-	req := model.ViewMovieRequest{}
+// @Router /api/v1/rating/cou-rating [post]
+func (h *RatingHandlers) CreateOrUpdate(r *ginext.Request) (*ginext.Response, error) {
+	req := model.RatingRequest{}
 	r.MustBind(&req)
 
 	if err := common.CheckRequireValid(req); err != nil {
-		log.WithError(err).Error("error_400: error parse")
 		return nil, ginext.NewError(http.StatusBadRequest, utils.MessageError()[http.StatusBadRequest])
 	}
 
-	data, err := h.service.UpdateViewCount(r.Context(), req)
+	data, err := h.service.CreateOrUpdate(r.Context(), req)
 	if err != nil {
 		return nil, err
 	}
-	return &ginext.Response{Code: http.StatusOK, GeneralBody: &ginext.GeneralBody{
-		Data: data,
-	}}, nil
+	return ginext.NewResponseData(http.StatusOK, data), nil
 }
 
 // MashUpload
@@ -217,8 +163,8 @@ func (h *MovieHandlers) UpdateViewCount(r *ginext.Request) (*ginext.Response, er
 // @Produce  json
 // @Param data body model.BlacklistParam true "body data"
 // @Success 200 {object} interface{}
-// @Router /api/v1/movie/mash-upload [get]
-func (h *MovieHandlers) MashUpload(r *ginext.Request) (*ginext.Response, error) {
+// @Router /api/v1/system/rating/mash-upload [get]
+func (h *RatingHandlers) MashUpload(r *ginext.Request) (*ginext.Response, error) {
 	log := logger.WithCtx(r.GinCtx, utils.GetCurrentCaller(h, 0))
 
 	if err := h.service.MashUpload(r.Context()); err != nil {

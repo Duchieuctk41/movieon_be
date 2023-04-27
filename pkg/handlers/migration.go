@@ -48,17 +48,65 @@ func (h *MigrationHandler) Migrate(ctx *gin.Context) {
 	log := logger.WithCtx(ctx, "Migrate")
 	// put your migrations at the end of the list
 	migrate := gormigrate.New(h.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		//{
-		//	ID: "20221229163504",
-		//	Migrate: func(tx *gorm.DB) error {
-		//		log.Info("Migrate 20221229163504 - BaseMigrate")
-		//		if err := h.BaseMigrate(ctx, tx); err != nil {
-		//			return err
-		//		}
-		//		return nil
-		//	},
-		//},
-
+		{
+			// add column view_count
+			ID: "20230426191358",
+			Migrate: func(tx *gorm.DB) error {
+				if err := h.db.AutoMigrate(&model.Movie{}, &model.ViewMovie{}); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			// add column view_count
+			ID: "20230422194716",
+			Migrate: func(tx *gorm.DB) error {
+				if err := h.db.AutoMigrate(&model.Rating{}, &model.User{}); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			// add column user_id_old in table rating
+			// add column id_old in table users
+			ID: "20230422192407",
+			Migrate: func(tx *gorm.DB) error {
+				if err := h.db.AutoMigrate(&model.Rating{}, &model.User{}); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			ID: "20230404210428",
+			Migrate: func(tx *gorm.DB) error {
+				if err := h.db.AutoMigrate(&model.Rating{}); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			ID: "20221128213038",
+			Migrate: func(tx *gorm.DB) error {
+				if err := h.db.AutoMigrate(&model.Movie{}); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			ID: "20230404101636",
+			Migrate: func(tx *gorm.DB) error {
+				log.Info("Migrate 20230404101636 - create table mo_movie")
+				if err := h.BaseMigrate(ctx, tx); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	})
 	err := migrate.Migrate()
 	if err != nil {

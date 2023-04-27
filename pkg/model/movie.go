@@ -16,6 +16,8 @@ type Movie struct {
 	Poster      string  `gorm:"poster" json:"poster"`
 	Trailer     string  `gorm:"trailer" json:"trailer"`
 	FormatMovie string  `gorm:"format_movie" json:"format"`
+	IdOld       string  `gorm:"id_old" json:"id_old"` // id cua phim tren he thong cu
+	ViewCount   int64   `gorm:"view_count" json:"view_count"`
 }
 
 func (Movie) TableName() string {
@@ -38,15 +40,27 @@ type MovieRequest struct {
 	Poster      *string  `json:"poster"`
 	Trailer     *string  `json:"trailer"`
 	FormatMovie *string  `json:"format_movie"`
+	IdOld       *string  `json:"id_old"`
+	ViewCount   *int64   `json:"view_count"`
 }
 
 type MovieParams struct {
 	BaseParam
-	Day            string `json:"day" form:"day"`
-	MovieTheaterId string `json:"movie_theater_id" form:"movie_theater_id"`
+	Day    string `json:"day" form:"day"`
+	UserId string `json:"user_id" form:"user_id"`
 }
 
 type MovieResponse struct {
 	Data []Movie                `json:"data"`
 	Meta map[string]interface{} `json:"meta"`
+}
+
+type MovieSuggestResponse struct {
+	IdOld  string `json:"id_old"`
+	Name   string `json:"name"`
+	Genres string `json:"genres"`
+}
+
+type ListSuggestResponse struct {
+	Data []string `json:"data"`
 }

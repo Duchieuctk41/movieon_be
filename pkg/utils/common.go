@@ -215,3 +215,16 @@ func GetCurrentTime() time.Time {
 func GetToday() time.Time {
 	return time.Now().UTC().Truncate(24 * time.Hour)
 }
+
+func ConvertTimeStampToTime(timestamp string) time.Time {
+	i, _ := strconv.ParseInt(timestamp, 10, 64)
+	return time.Unix(i, 0)
+}
+
+func ConvertStringToFloat64(str string) float64 {
+	res, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		return 5.0
+	}
+	return res
+}

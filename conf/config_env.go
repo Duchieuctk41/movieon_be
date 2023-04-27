@@ -24,6 +24,9 @@ type AppConfig struct {
 	TrustedProxy  []string `env:"TRUSTED_PROXY" envSeparator:"," envDefault:"127.0.0.1,10.0.0.0/8,192.168.0.0/16"`
 	Debug         bool     `env:"DEBUG" envDefault:"true"`
 	DB            *Config
+
+	// server config
+	MovieOnAi string `env:"MOVIE_ON_AI" envDefault:"http://localhost:8000"`
 }
 
 var config AppConfig

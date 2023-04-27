@@ -4,7 +4,6 @@ import (
 	"context"
 	"movieon_be/pkg/model"
 	"movieon_be/pkg/utils"
-	"strings"
 )
 
 func (r *RepoPG) CreateMovie(ctx context.Context, ob *model.Movie) error {
@@ -49,50 +48,64 @@ func (r *RepoPG) GetListMovie(ctx context.Context, req model.MovieParams) (*mode
 		Count int `json:"count"`
 	})
 
-	tx = tx.Select("movie.*")
-
-	if req.Day != "" || req.MovieTheaterId != "" {
-		tx = tx.Joins("JOIN show ON show.movie_id = movie.id")
-		if req.Day != "" {
-			tx = tx.Where("show.day = ?", req.Day)
-		}
-
-		if req.MovieTheaterId != "" {
-			tx = tx.Where("show.movie_theater_id = ?", req.MovieTheaterId)
-		}
-	}
-
-	if req.Search != "" {
-		tx = tx.Where("movie.name like ?", "%"+req.Search+"%")
-	}
-
-	if req.Filter != "" {
-		filter := strings.Split(req.Filter, ",")
-		for i := 0; i < len(filter); i += 2 {
-			if i+1 < len(filter) {
-				tx = tx.Where(filter[i]+" = ?", filter[i+1])
-			}
-		}
-	}
+	tx = tx.Select("mo_movie.*").
+		Joins("left join view_movie on view_movie.movie_id = mo_movie.id").
+		Where("view_movie.movie_id is null")
 
 	switch req.Sort {
 	case utils.SORT_CREATED_AT_OLDEST:
-		tx = tx.Order("created_at")
+		tx = tx.Order("mo_movie.view_count desc, mo_movie.created_at")
 	default:
-		tx = tx.Order("created_at desc")
+		tx = tx.Order("mo_movie.view_count desc, mo_movie.created_at desc")
 	}
 
-	if req.Day != "" || req.MovieTheaterId != "" {
-		tx = tx.Group("movie.id")
-	}
-
-	if err := tx.Find(&rs.Data).Error; err != nil {
+	if err := tx.Limit(pageSize).Offset(r.GetOffset(page, pageSize)).Find(&rs.Data).Error; err != nil {
 		return nil, r.ReturnErrorInGetFunc(ctx, err, utils.GetCurrentCaller(r, 0))
 	}
 
-	//2022-12-18T00:00:00+07:00
-	//postman: 2022-12-18T00:00:00 07:00
 	if rs.Meta, err = r.GetPaginationInfo("", tx, total.Count, page, pageSize); err != nil {
+		return nil, r.ReturnErrorInGetFunc(ctx, err, utils.GetCurrentCaller(r, 0))
+	}
+
+	return &rs, nil
+}
+
+func (r *RepoPG) GetListContinue(ctx context.Context, req model.MovieParams) (*model.MovieResponse, error) {
+	tx, cancel := r.DBWithTimeout(ctx)
+	defer cancel()
+
+	rs := model.MovieResponse{}
+	var err error
+	page := r.GetPage(req.Page)
+	pageSize := r.GetPageSize(req.PageSize)
+	total := new(struct {
+		Count int `json:"count"`
+	})
+
+	tx = tx.Select("mo_movie.*").
+		Joins("inner join view_movie on view_movie.movie_id = mo_movie.id").
+		Where("view_movie.user_id = ?", req.UserId)
+
+	if err := tx.Limit(pageSize).Offset(r.GetOffset(page, pageSize)).Find(&rs.Data).Error; err != nil {
+		return nil, r.ReturnErrorInGetFunc(ctx, err, utils.GetCurrentCaller(r, 0))
+	}
+
+	if rs.Meta, err = r.GetPaginationInfo("", tx, total.Count, page, pageSize); err != nil {
+		return nil, r.ReturnErrorInGetFunc(ctx, err, utils.GetCurrentCaller(r, 0))
+	}
+
+	return &rs, nil
+}
+
+func (r *RepoPG) GetListMoviesByIdOld(ctx context.Context, listIdOld []string) (*model.MovieResponse, error) {
+	tx, cancel := r.DBWithTimeout(ctx)
+	defer cancel()
+
+	rs := model.MovieResponse{}
+
+	tx = tx.Where("id_old in (?)", listIdOld)
+
+	if err := tx.Find(&rs.Data).Error; err != nil {
 		return nil, r.ReturnErrorInGetFunc(ctx, err, utils.GetCurrentCaller(r, 0))
 	}
 
